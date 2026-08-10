@@ -1,0 +1,16 @@
+# Secrets (nunca commitear)
+.env
+
+# Certificados de Traefik (generados)
+traefik/acme.json
+
+# Artefactos
+*.jar
+target/
+node_modules/
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
