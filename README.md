@@ -8,6 +8,8 @@ Infraestructura del VPS `darknezz` (Oracle Cloud Always Free, <VPS_IP>) como có
 darknezz-infra/
 ├── docker-compose.yml           # Traefik + todos los servicios
 ├── .env.example                 # Plantilla de secrets (copiar a .env)
+├── docs/
+│   └── VPS_SETUP.md             # 📖 TODO el setup: SSH, hardening, Cloudflare, Traefik, Neon, pipeline, DR
 ├── traefik/
 │   ├── traefik.yml              # Config principal (entrypoints, providers, certs)
 │   └── dynamic/
@@ -18,6 +20,8 @@ darknezz-infra/
     ├── setup.sh                 # Primer boot del VPS (red, acme, permisos, up)
     └── deploy.sh                # git pull + compose up + prune opcional
 ```
+
+> 📖 **Empezar por `docs/VPS_SETUP.md`** — documenta toda la infraestructura y el disaster recovery.
 
 ## 🌐 Convención de subdominios
 
