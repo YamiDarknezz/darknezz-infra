@@ -18,7 +18,6 @@ services:
       - ./traefik/traefik.yml:/traefik.yml:ro
       - ./traefik/dynamic:/dynamic:ro
       - ./traefik/acme.json:/acme.json
-      - ./.htpasswd:/dynamic/.htpasswd:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=Host(`traefik.example.dev`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
