@@ -1,0 +1,6 @@
+http:
+  middlewares:
+    dashboard-auth:
+      basicAuth:
+        users:
+          - ${DASHBOARD_HASH}
