@@ -3,6 +3,7 @@
 
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /src
+RUN apt-get update -qq && apt-get install -y -qq git >/dev/null 2>&1 && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 https://github.com/YamiDarknezz/inventory-api.git .
 RUN ./mvnw -q package -DskipTests
 
