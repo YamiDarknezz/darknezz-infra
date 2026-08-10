@@ -29,6 +29,8 @@ services:
   inventory-api:
     build:
       context: ./services/inventory-api
+      args:
+        INVENTORY_SHA: ${INVENTORY_SHA:-main}
     container_name: inventory-api
     restart: unless-stopped
     networks:
