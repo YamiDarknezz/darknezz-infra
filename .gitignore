@@ -1,6 +1,6 @@
 # Secrets (nunca commitear)
 .env
-.htpasswd
+traefik/dynamic/.htpasswd
 
 # Certificados de Traefik (generados)
 traefik/acme.json

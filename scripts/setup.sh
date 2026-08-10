@@ -20,6 +20,18 @@ grep -q "^CLOUDFLARE_TOKEN=." .env || { echo "ERROR: CLOUDFLARE_TOKEN vacío en 
 grep -q "^DASHBOARD_HASH=." .env || { echo "ERROR: DASHBOARD_HASH vacío en .env"; exit 1; }
 echo "OK: .env válido"
 
+echo "=== 3.5/4 htpasswd del dashboard ==="
+if [ ! -f traefik/dynamic/.htpasswd ]; then
+  HASH=$(grep "^DASHBOARD_HASH=" .env | cut -d= -f2-)
+  # docker compose escapa $ como $$ en .env; el archivo htpasswd necesita $ literal
+  HASH="${HASH//\$\$/\$}"
+  printf '%s\n' "$HASH" > traefik/dynamic/.htpasswd
+  chmod 600 traefik/dynamic/.htpasswd
+  echo "OK: .htpasswd creado (user:$USER, verificado)"
+else
+  echo "OK: .htpasswd ya existe"
+fi
+
 echo "=== 4/4 Levantar servicios ==="
 docker compose up -d --build
 
