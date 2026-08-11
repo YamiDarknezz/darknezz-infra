@@ -1,0 +1,17 @@
+# Prometheus — scrape targets de la infra darknezz
+# La contraseña vive en un archivo montado (password_file), nunca en git:
+#   /home/yami/data/secrets/traefik-metrics.password  (chmod 600)
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: traefik
+    scheme: https
+    basic_auth:
+      username: yamidarknezz
+      password_file: /etc/prometheus/traefik-metrics.pass
+    static_configs:
+      - targets: ["traefik.darknezz.dev:443"]
+        labels:
+          service: "traefik"
