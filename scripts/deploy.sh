@@ -5,17 +5,20 @@
 set -e
 cd "$(dirname "$0")/.."
 
-echo "=== 1/3 git pull ==="
+echo "=== 1/4 git pull ==="
 git pull
 
-echo "=== 2/3 docker compose up -d --build ==="
+echo "=== 2/4 gen alertmanager config (token) ==="
+./scripts/gen-alertmanager-config.sh
+
+echo "=== 3/4 docker compose up -d --build ==="
 docker compose up -d --build
 
 if [ "$1" == "--prune" ]; then
-  echo "=== 3/3 docker system prune (no usados) ==="
+  echo "=== 4/4 docker system prune (no usados) ==="
   docker system prune -f --volumes
 else
-  echo "=== 3/3 OK (usa --prune para limpiar imágenes viejas) ==="
+  echo "=== 4/4 OK (usa --prune para limpiar imágenes viejas) ==="
 fi
 
 echo "DONE"

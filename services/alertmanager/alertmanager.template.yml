@@ -1,0 +1,24 @@
+# Alertmanager — envío de alertas a Telegram
+# El token y chat_id vienen de variables de entorno (definidas en .env, gitignored)
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: telegram
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token: ${TELEGRAM_BOT_TOKEN}
+        # chat_id es un campo numérico (no admite ${VAR}): ID del DM de Gerardo
+        chat_id: 5069336124
+        send_resolved: true
+        parse_mode: HTML
+        message: |-
+          {{ range .Alerts }}{{ if eq .Status "firing" }}🔴{{ else }}🟢{{ end }} <b>{{ .Labels.alertname }}</b> ({{ .Labels.severity }})
+          {{ .Annotations.summary }}
+          {{ end }}
