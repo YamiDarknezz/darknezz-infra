@@ -1,71 +1,86 @@
-# 🔀 darknezz-infra
+# darknezz-infra
 
-Infraestructura del VPS `darknezz` (Oracle Cloud Always Free, <VPS_IP>) como código. Traefik + servicios Docker Compose, con la convención **un proyecto = un subdominio** bajo `*.example.dev`.
+**Infrastructure as code** for a self-hosted stack running on **Oracle Cloud (Always Free)** — a Traefik reverse proxy + Docker Compose services deployed to production. Everything is reproducible from this repo: plain YAML, shell scripts and GitHub Actions. No panels, no magic.
 
-## 📁 Estructura
+## Repository layout
 
 ```
 darknezz-infra/
-├── docker-compose.yml           # Traefik + todos los servicios
-├── .env.example                 # Plantilla de secrets (copiar a .env)
-├── docs/
-│   └── VPS_SETUP.md             # 📖 TODO el setup: SSH, hardening, Cloudflare, Traefik, Neon, pipeline, DR
+├── docker-compose.yml           # Traefik + services
+├── .env.example                 # Secrets template (copy to .env, never commit)
 ├── traefik/
-│   ├── traefik.yml              # Config principal (entrypoints, providers, certs)
+│   ├── traefik.yml              # Main config (entrypoints, providers, certs)
 │   └── dynamic/
-│       └── middlewares.yml      # BasicAuth del dashboard
+│       └── middlewares.yml      # Dashboard BasicAuth
 ├── services/
-│   └── inventory-api/           # Dockerfile (multi-stage, compila el jar)
+│   └── inventory-api/           # Dockerfile (multi-stage, builds the jar)
 └── scripts/
-    ├── setup.sh                 # Primer boot del VPS (red, acme, permisos, up)
-    └── deploy.sh                # git pull + compose up + prune opcional
+    ├── setup.sh                 # First boot (network, acme, permissions, up)
+    └── deploy.sh                # git pull + compose up + optional prune
 ```
 
-> 📖 **Empezar por `docs/VPS_SETUP.md`** — documenta toda la infraestructura y el disaster recovery.
+## Subdomain convention
 
-## 🌐 Convención de subdominios
+One project = one prefixed subdomain under a wildcard DNS record (`*.example.dev` already points to the VM):
 
-| Subdominio | Uso | Estado |
-|---|---|---|
-| `www.example.dev` / `api.example.dev` | **Main site** (brand/root project) | Reservados — no usar para proyectos |
-| `api-inventory.example.dev` | inventory-api | ✅ Activo |
-| `traefik.example.dev` | Dashboard Traefik (BasicAuth) | ✅ Activo |
-| `zeroclaw.example.dev`, `hermes.example.dev` | Futuros proyectos | Wildcard `*.example.dev` ya cubre |
+| Subdomain | Purpose |
+|---|---|
+| `www.example.dev` / `api.example.dev` | **Main site** — reserved for the primary project |
+| `api-inventory.example.dev` | inventory-api (Spring Boot) |
+| `traefik.example.dev` | Traefik dashboard (BasicAuth-protected) |
+| `zeroclaw.example.dev`, `hermes.example.dev` | Future services (wildcard covers them) |
 
-Regla: **cada proyecto usa un subdominio con prefijo descriptivo** (`api-`, `app-`, `ui-`). Los subdominios genéricos son exclusivos de la marca.
+Rule: every project gets a descriptive prefix (`api-`, `app-`, `ui-`). Generic subdomains stay reserved. The base domain is configurable via the `DOMAIN` variable in `.env`.
 
-## 🚀 Deploy (en el VPS)
+## Quick start (on the VM)
 
 ```bash
-# 1. Primer setup (red docker + acme.json + permisos + levantar todo)
-cd /home/<USER>/docker && ./scripts/setup.sh
+# 1. First-time setup (docker network + acme.json + permissions + bring up)
+cd $HOME/docker && ./scripts/setup.sh
 
-# 2. Deploys posteriores (actualizar código + reconstruir)
-./scripts/deploy.sh            # normal
-./scripts/deploy.sh --prune    # + limpieza de imágenes/volúmenes no usados
+# 2. Later deploys (update code + rebuild)
+./scripts/deploy.sh              # normal
+./scripts/deploy.sh --prune      # also prune unused images/volumes
 ```
 
-## 🔐 Secrets (nunca en git)
+## Secrets (never in git)
 
-Copiar `.env.example` → `.env` con valores reales:
+Copy `.env.example` → `.env` with real values:
 
-| Variable | Para qué |
+| Variable | Used for |
 |---|---|
-| `CLOUDFLARE_TOKEN` | dnsChallenge de Let's Encrypt (wildcard cert) |
-| `DASHBOARD_HASH` | BasicAuth del dashboard (`openssl passwd -apr1`) |
-| `JWT_SECRET` | Firma de tokens JWT de inventory-api |
-| `DB_URL` / `DB_USER` / `DB_PASSWORD` | PostgreSQL (Neon) de inventory-api |
+| `CLOUDFLARE_TOKEN` | Let's Encrypt dnsChallenge (wildcard cert) |
+| `DOMAIN` | Base domain interpolated into Traefik router labels |
+| `ACME_EMAIL` | Let's Encrypt account email |
+| `DASHBOARD_HASH` | Traefik dashboard BasicAuth (`openssl passwd -apr1`) |
+| `JWT_SECRET` | inventory-api JWT signing |
+| `DB_URL` / `DB_USER` / `DB_PASSWORD` | PostgreSQL (Neon) |
 
-El `.env` vive SOLO en `/home/<USER>/docker/.env` del VPS. El repositorio solo tiene `.env.example` con placeholders.
+The `.env` lives ONLY on the VM at `$HOME/docker/.env`. This repo only has `.env.example` with placeholders.
 
-## 🔄 Flujo de una petición
+## Request flow
 
 ```
-cliente → Cloudflare DNS (wildcard) → Traefik (80/443)
-   → router por Host() en labels → servicio interno (red proxy)
-   → cert Let's Encrypt wildcard (dnsChallenge Cloudflare, acme.json)
+client → DNS (wildcard) → Traefik (80/443)
+   → router by Host() from container labels → internal service (proxy network)
+   → wildcard TLS via Cloudflare dnsChallenge (acme.json)
 ```
 
-- `exposedByDefault: false` — ningún contenedor se expone sin querer
-- Redirect HTTP→HTTPS global en el entryPoint web
-- Dashboard Traefik protegido con BasicAuth (a diferencia de Pauser)
+- `exposedByDefault: false` — nothing is exposed without explicit labels
+- Global HTTP→HTTPS redirect on the `web` entrypoint
+- Traefik dashboard protected with BasicAuth
+
+## Auto-deploy pipeline
+
+Push to `main` on the application repo → GitHub Actions:
+
+1. **Build** — package the jar
+2. **Test** — run the test suite with coverage gates
+3. **Deploy** — SSH into the VM: `git pull` + `docker compose up -d --build`
+
+The exact commit SHA is passed as a Docker build argument (`INVENTORY_SHA`), so Docker's layer cache is invalidated on real code changes and **the exact tested commit is shipped**. Only the changed service is recreated — Traefik keeps serving during updates.
+
+## Related
+
+- [inventory-api](https://github.com/YamiDarknezz/inventory-api) — the Spring Boot API deployed with this stack
+- [playwright-test-automation-demo](https://github.com/YamiDarknezz/playwright-test-automation-demo) — the test suite covering it
