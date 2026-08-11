@@ -18,7 +18,7 @@ services:
       - ./traefik/traefik.yml:/traefik.yml:ro
       - ./traefik/dynamic:/dynamic:ro
       - ./traefik/acme.json:/acme.json
-      - $HOME/data/logs:/logs
+      - /var/log/traefik:/logs
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=Host(`traefik.${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
