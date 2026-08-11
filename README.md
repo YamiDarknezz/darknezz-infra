@@ -28,6 +28,8 @@ One project = one prefixed subdomain under a wildcard DNS record (`*.example.dev
 | `www.example.dev` / `api.example.dev` | **Main site** — reserved for the primary project |
 | `api-inventory.example.dev` | inventory-api (Spring Boot) |
 | `traefik.example.dev` | Traefik dashboard (BasicAuth-protected) |
+| `grafana.example.dev` | Grafana dashboards (login propio) |
+| `prometheus.example.dev` | Prometheus UI (BasicAuth del dashboard) |
 | `zeroclaw.example.dev`, `hermes.example.dev` | Future services (wildcard covers them) |
 
 Rule: every project gets a descriptive prefix (`api-`, `app-`, `ui-`). Generic subdomains stay reserved. The base domain is configurable via the `DOMAIN` variable in `.env`.
