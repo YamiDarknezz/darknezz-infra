@@ -37,19 +37,26 @@ fi
 echo "${SIZE}" > "${STATE}"
 
 # ---------- 2) Logins SSH con clave no autorizada ----------
-ALLOWED="REDACTED_SSH_KEYS"
+# Claves autorizadas (fingerprints SIN prefijo SHA256:) — yami@darknezz + github-actions-deploy
+ALLOWED_KEYS="REDACTED_SSH_KEYS"
+# IPs silenciadas (trabajo y casa de Gerardo) — capa extra; la clave sigue siendo la autoridad
+ALLOWED_IPS="REDACTED_IPS"
 
 while IFS= read -r line; do
   fp=$(echo "$line" | grep -oP 'SHA256:[A-Za-z0-9+/]+' | head -1)
+  fp=${fp#SHA256:}   # normalizar: quitar prefijo para comparar con allowlist
   ip=$(echo "$line" | grep -oP 'from \K\S+')
   user=$(echo "$line" | grep -oP 'for \K\S+')
   [ -z "${fp}" ] && continue
   known=0
-  for a in ${ALLOWED}; do
+  for a in ${ALLOWED_KEYS}; do
     [ "${fp}" = "${a}" ] && known=1
   done
+  for i in ${ALLOWED_IPS}; do
+    [ "${ip}" = "${i}" ] && known=1
+  done
   if [ "${known}" = 0 ]; then
-    send "🚨 <b>LOGIN SSH con clave NO autorizada</b>"$'\n'"IP: ${ip} | usuario: ${user}"$'\n'"Fingerprint: ${fp}"
+    send "🚨 <b>LOGIN SSH con clave NO autorizada</b>"$'\n'"IP: ${ip} | usuario: ${user}"$'\n'"Fingerprint: SHA256:${fp}"
   fi
 done < <(journalctl -u ssh --since "6 minutes ago" --no-pager 2>/dev/null | grep "Accepted")
 
