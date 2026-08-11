@@ -20,8 +20,7 @@ darknezz-infra/
 │   ├── setup.sh                 # First boot (network, acme, permissions, up)
 │   ├── deploy.sh                # git pull + compose up + optional prune
 │   └── backup.sh                # Weekly: acme.json + .env + secrets + Hermes → data/backups
-└── docs/
-    └── VPS_SETUP.md             # Full setup, hardening, secrets map, disaster recovery
+└── docs/                        # VPS_SETUP.md — SOLO LOCAL en el VPS (gitignored, detalles de infra)
 ```
 
 ## Subdomain convention
@@ -120,7 +119,7 @@ Si Oracle reclama la VM: el **block volume 150 GB queda intacto**. Para reconstr
 6. Si cambió la IP: actualizar records A en Cloudflare
 7. `docker compose ps` + healthchecks
 
-Detalle completo en [`docs/VPS_SETUP.md`](docs/VPS_SETUP.md) (hardening, secrets map, historial).
+Detalle completo en `docs/VPS_SETUP.md` — **solo local en el VPS** (no está en git: detalla infraestructura real, no debe exponerse).
 
 ## Related
 
