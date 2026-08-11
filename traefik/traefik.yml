@@ -4,6 +4,10 @@ global:
 api:
   dashboard: true
 
+metrics:
+  prometheus:
+    manualRouting: true
+
 accessLog:
   filePath: /logs/access.log
   format: json
