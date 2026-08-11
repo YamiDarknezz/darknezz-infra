@@ -64,6 +64,7 @@ services:
       - "traefik.http.routers.api.rule=Host(`api-inventory.${DOMAIN}`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.api.middlewares=ratelimit-http"
       - "traefik.http.services.api.loadbalancer.server.port=8080"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
