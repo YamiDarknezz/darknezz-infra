@@ -4,6 +4,8 @@ global:
 api:
   dashboard: true
 
+ping: {}
+
 metrics:
   prometheus:
     manualRouting: true
@@ -13,6 +15,8 @@ accessLog:
   format: json
 
 entryPoints:
+  traefik:
+    address: ":8080"
   web:
     address: ":80"
     http:
