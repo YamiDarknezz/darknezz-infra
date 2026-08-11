@@ -22,13 +22,17 @@ OFFSET=$(cat "${STATE}" 2>/dev/null || echo 0)
 SIZE=$(stat -c%s "${FAIL2BAN_LOG}" 2>/dev/null || echo 0)
 
 if [ "${SIZE}" -ge "${OFFSET}" ] && [ "${SIZE}" -gt 0 ]; then
-  NEW=$(tail -c +$((OFFSET+1)) "${FAIL2BAN_LOG}" 2>/dev/null | grep " Ban " || true)
+  # Solo líneas de ban reales (fail2ban.actions): " Ban " también matchea
+  # "Increase Ban" (bantime.increment), duplicando notificaciones por baneo.
+  NEW=$(tail -c +$((OFFSET+1)) "${FAIL2BAN_LOG}" 2>/dev/null | grep -E '\] Ban ' || true)
   if [ -n "${NEW}" ]; then
     MSG="🚫 <b>fail2ban baneó IP nueva</b>"
     while IFS= read -r line; do
-      jail=$(echo "$line" | grep -oP '\[\K\w+(?=\])' | head -1)
+      # El primer corchete es el PID de fail2ban ([827]); el nombre real de la
+      # jail va tras NOTICE:  ...NOTICE [http-traefik] Ban <ip>
+      jail=$(echo "$line" | grep -oP 'NOTICE\s*\[\K[^\]]+' | head -1)
       ip=$(echo "$line" | grep -oP 'Ban \K\S+')
-      ts=$(echo "$line" | grep -oP '^\S+ \S+' | tr -d ' ')
+      ts=$(echo "$line" | grep -oP '^\S+ \S+')
       MSG="${MSG}"$'\n'"• ${ip} (jail: ${jail}) — ${ts}"
     done <<< "${NEW}"
     send "${MSG}"
