@@ -1,0 +1,34 @@
+# fail2ban — jail.local (template replicable, instalado por scripts/setup-fail2ban.sh)
+# Source of truth: este archivo. La copia viva vive en /etc/fail2ban/jail.local.
+[DEFAULT]
+bantime = 15m
+findtime = 10m
+maxretry = 5
+# 172.18.0.0/16 = bridge de Docker: el host aparece como ese IP ante traefik — NUNCA banearlo
+ignoreip = 127.0.0.1/8 172.18.0.0/16
+
+[sshd]
+enabled = true
+
+[http-traefik]
+enabled = true
+port = http,https
+filter = traefik-auth
+logpath = /var/log/traefik/access.log
+backend = polling
+maxretry = 5
+findtime = 300
+bantime = 300
+bantime.increment = true
+bantime.factor = 6
+bantime.maxtime = 7200
+ignoreip = 127.0.0.1/8 ::1 172.18.0.0/16
+
+[recidive]
+enabled = true
+logpath = /var/log/fail2ban.log
+backend = polling
+maxretry = 3
+findtime = 86400
+bantime = 31536000
+banaction = iptables-allports

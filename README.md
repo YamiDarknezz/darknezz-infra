@@ -16,11 +16,14 @@ darknezz-infra/
 │   ├── inventory-api/           # Dockerfile (multi-stage, builds the jar)
 │   ├── prometheus/              # prometheus.yml (scrape de traefik)
 │   └── grafana/                 # provisioning/ (datasource + dashboard Traefik)
+├── configs/
+│   └── fail2ban/               # jail.local + filter traefik-auth (templates replicables)
 ├── scripts/
-│   ├── setup.sh                 # First boot (network, acme, permissions, up)
-│   ├── deploy.sh                # git pull + compose up + optional prune
-│   └── backup.sh                # Weekly: acme.json + .env + secrets + Hermes → data/backups
-└── docs/                        # VPS_SETUP.md — SOLO LOCAL en el VPS (gitignored, detalles de infra)
+│   ├── setup.sh                # First boot (network, acme, permissions, up)
+│   ├── deploy.sh               # git pull + compose up + optional prune
+│   ├── backup.sh               # Weekly: acme.json + .env + secrets + Hermes → data/backups
+│   └── setup-fail2ban.sh       # Instala fail2ban desde configs/ (replicable)
+└── docs/                        # VPS_SETUP.md + FAIL2BAN.md — SOLO LOCAL en el VPS (gitignored, detalles de infra)
 ```
 
 ## Subdomain convention
@@ -78,7 +81,8 @@ client → DNS (wildcard) → Traefik (80/443)
 
 - `exposedByDefault: false` — nothing is exposed without explicit labels
 - Global HTTP→HTTPS redirect on the `web` entrypoint
-- Traefik dashboard protected with BasicAuth
+- Traefik dashboard protected with BasicAuth (users: dashboard + metrics)
+- **fail2ban**: 3 jails (sshd, http-traefik sobre el access log JSON, recidive 1 año) — replicable con `./scripts/setup-fail2ban.sh` (config en `configs/fail2ban/`)
 
 ## Auto-deploy pipeline
 
