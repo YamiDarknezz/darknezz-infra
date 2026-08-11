@@ -38,5 +38,5 @@ docker compose up -d --build
 echo ""
 echo "DONE — verificar:"
 echo "  docker compose ps"
-echo "  https://traefik.example.dev/dashboard  (BasicAuth)"
-echo "  https://api-inventory.example.dev/actuator/health"
+echo "  https://traefik.${DOMAIN}/dashboard  (BasicAuth)"
+echo "  https://api-inventory.${DOMAIN}/actuator/health"
