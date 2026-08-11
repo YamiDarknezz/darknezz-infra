@@ -15,3 +15,5 @@ node_modules/
 Thumbs.db
 .idea/
 .vscode/
+# Docs locales (no subir a git — detallan infraestructura real)
+docs/
