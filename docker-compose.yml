@@ -28,6 +28,8 @@ services:
       - "traefik.http.middlewares.dashboard-auth.basicauth.users=${DASHBOARD_HASH}"
       - "traefik.http.middlewares.ratelimit-http.ratelimit.average=30"
       - "traefik.http.middlewares.ratelimit-http.ratelimit.burst=60"
+      - "traefik.http.middlewares.ratelimit-api.ratelimit.average=10"
+      - "traefik.http.middlewares.ratelimit-api.ratelimit.burst=30"
       - "traefik.http.routers.metrics.rule=Host(`traefik.${DOMAIN}`) && PathPrefix(`/metrics`)"
       - "traefik.http.routers.metrics.service=prometheus@internal"
       - "traefik.http.routers.metrics.entrypoints=websecure"
@@ -64,7 +66,7 @@ services:
       - "traefik.http.routers.api.rule=Host(`api-inventory.${DOMAIN}`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.api.middlewares=ratelimit-http"
+      - "traefik.http.routers.api.middlewares=ratelimit-api"
       - "traefik.http.services.api.loadbalancer.server.port=8080"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
