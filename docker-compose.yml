@@ -83,6 +83,7 @@ services:
       - proxy
     volumes:
       - ./services/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./services/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
       - $HOME/data/prometheus-data:/prometheus
       - $HOME/data/secrets/traefik-metrics.password:/etc/prometheus/traefik-metrics.pass:ro
     labels:
@@ -153,6 +154,30 @@ services:
       - '--path.sysfs=/host/sys'
     labels:
       - "traefik.enable=false"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  alertmanager:
+    image: prom/alertmanager:v0.33.1
+    container_name: alertmanager
+    restart: unless-stopped
+    networks:
+      - proxy
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - $HOME/data/secrets/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - $HOME/data/alertmanager-data:/alertmanager
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     logging:
       driver: json-file
       options:
