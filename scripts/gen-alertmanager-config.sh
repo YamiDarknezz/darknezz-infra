@@ -28,6 +28,9 @@ fi
 
 mkdir -p "$HOME/data/secrets"
 chmod 700 "$HOME/data/secrets"
+# Storage de Alertmanager: el contenedor corre como nobody (uid 65534)
+mkdir -p "$HOME/data/alertmanager-data"
+chown 65534:65534 "$HOME/data/alertmanager-data" 2>/dev/null || true
 envsubst < "$TEMPLATE" > "$OUT"
 # 644: legible por el contenedor (corre como nobody); el dir 700 ya restringe el acceso
 chmod 644 "$OUT"
