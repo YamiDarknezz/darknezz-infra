@@ -4,6 +4,11 @@
 bantime = 15m
 findtime = 10m
 maxretry = 5
+# Bans progresivos: cada reincidencia multiplica x6 el bantime, tope 1 año (31536000s).
+# Igual política para SSH y HTTP — heredada por [sshd] y [http-traefik].
+bantime.increment = true
+bantime.factor = 6
+bantime.maxtime = 31536000
 # 172.18.0.0/16 = bridge de Docker: el host aparece como ese IP ante traefik — NUNCA banearlo
 ignoreip = 127.0.0.1/8 172.18.0.0/16
 
@@ -18,10 +23,6 @@ logpath = /var/log/traefik/access.log
 backend = polling
 maxretry = 5
 findtime = 300
-bantime = 300
-bantime.increment = true
-bantime.factor = 6
-bantime.maxtime = 7200
 ignoreip = 127.0.0.1/8 ::1 172.18.0.0/16
 
 [recidive]
