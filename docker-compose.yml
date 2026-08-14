@@ -189,6 +189,34 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  portfolio:
+    image: nginx:1.27-alpine
+    container_name: portfolio
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - $HOME/data/portfolio-dist:/usr/share/nginx/html:ro
+      - ./services/portfolio/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portfolio.rule=Host(`darknezz.dev`) || Host(`www.darknezz.dev`)"
+      - "traefik.http.routers.portfolio.entrypoints=websecure"
+      - "traefik.http.routers.portfolio.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.portfolio.middlewares=ratelimit-http"
+      - "traefik.http.services.portfolio.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 networks:
   proxy:
     external: true
