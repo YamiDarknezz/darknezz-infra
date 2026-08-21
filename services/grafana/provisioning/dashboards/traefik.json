@@ -1,5 +1,7 @@
 {
-  "annotations": { "list": [] },
+  "annotations": {
+    "list": []
+  },
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -10,10 +12,25 @@
       "id": 1,
       "title": "Requests por segundo",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
       "fieldConfig": {
-        "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 15, "lineWidth": 2 } },
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
         "overrides": []
       },
       "targets": [
@@ -28,84 +45,200 @@
       "id": 2,
       "title": "Latencia (p50 / p95 / p99)",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
       "fieldConfig": {
-        "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 8, "lineWidth": 2 } },
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "lineWidth": 2
+          }
+        },
         "overrides": []
       },
       "targets": [
-        { "expr": "histogram_quantile(0.50, sum(rate(traefik_entrypoint_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50", "refId": "A" },
-        { "expr": "histogram_quantile(0.95, sum(rate(traefik_entrypoint_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95", "refId": "B" },
-        { "expr": "histogram_quantile(0.99, sum(rate(traefik_entrypoint_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99", "refId": "C" }
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(traefik_entrypoint_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(traefik_entrypoint_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(traefik_entrypoint_request_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
       ]
     },
     {
       "id": 3,
       "title": "Códigos de estado HTTP",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
       "fieldConfig": {
-        "defaults": { "unit": "reqps", "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 } },
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
         "overrides": []
       },
       "targets": [
-        { "expr": "sum by (code) (rate(traefik_entrypoint_requests_total[5m]))", "legendFormat": "{{code}}", "refId": "A" }
+        {
+          "expr": "sum by (code) (rate(traefik_entrypoint_requests_total[5m]))",
+          "legendFormat": "{{code}}",
+          "refId": "A"
+        }
       ]
     },
     {
       "id": 4,
       "title": "Tráfico (bytes/s)",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
       "fieldConfig": {
-        "defaults": { "unit": "Bps", "custom": { "drawStyle": "line", "fillOpacity": 15, "lineWidth": 2 } },
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
         "overrides": []
       },
       "targets": [
-        { "expr": "sum(rate(traefik_entrypoint_requests_bytes_total[5m]))", "legendFormat": "Subida (requests)", "refId": "A" },
-        { "expr": "sum(rate(traefik_entrypoint_responses_bytes_total[5m]))", "legendFormat": "Bajada (responses)", "refId": "B" }
+        {
+          "expr": "sum(rate(traefik_entrypoint_requests_bytes_total[5m]))",
+          "legendFormat": "Subida (requests)",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(traefik_entrypoint_responses_bytes_total[5m]))",
+          "legendFormat": "Bajada (responses)",
+          "refId": "B"
+        }
       ]
     },
     {
       "id": 5,
       "title": "Conexiones abiertas",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
       "fieldConfig": {
-        "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 20, "lineWidth": 2 } },
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
+        },
         "overrides": []
       },
       "targets": [
-        { "expr": "traefik_open_connections", "legendFormat": "{{entrypoint}} ({{protocol}})", "refId": "A" }
+        {
+          "expr": "traefik_open_connections",
+          "legendFormat": "{{entrypoint}} ({{protocol}})",
+          "refId": "A"
+        }
       ]
     },
     {
       "id": 6,
       "title": "Certificados TLS — días para expirar",
       "type": "timeseries",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
       "fieldConfig": {
-        "defaults": { "unit": "d", "custom": { "drawStyle": "line", "fillOpacity": 15, "lineWidth": 2 } },
+        "defaults": {
+          "unit": "d",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
         "overrides": []
       },
       "targets": [
-        { "expr": "(min by (cn) (traefik_tls_certs_not_after) - time()) / 86400", "legendFormat": "{{cn}}", "refId": "A" }
+        {
+          "expr": "(min by (cn) (traefik_tls_certs_not_after) - time()) / 86400",
+          "legendFormat": "{{cn}}",
+          "refId": "A"
+        }
       ]
     }
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["traefik", "darknezz"],
-  "templating": { "list": [] },
-  "time": { "from": "now-6h", "to": "now" },
+  "tags": [
+    "web",
+    "darknezz",
+    "traefik"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "",
-  "title": "Traefik — darknezz.dev",
+  "title": "🌐 darknezz.dev — Tráfico Web",
   "uid": "traefik-darknezz",
   "version": 1,
   "weekStart": ""
