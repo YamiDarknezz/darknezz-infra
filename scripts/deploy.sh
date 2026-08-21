@@ -11,8 +11,8 @@ git pull
 echo "=== 2/4 gen alertmanager config (token) ==="
 ./scripts/gen-alertmanager-config.sh
 
-echo "=== 3/4 docker compose up -d --build ==="
-docker compose up -d --build
+echo "=== 3/4 docker compose up -d --build --force-recreate ==="
+docker compose up -d --build --force-recreate
 
 if [ "$1" == "--prune" ]; then
   echo "=== 4/4 docker system prune (no usados) ==="

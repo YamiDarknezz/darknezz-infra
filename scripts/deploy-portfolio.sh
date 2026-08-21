@@ -36,7 +36,7 @@ rsync -a --delete dist/darknezzdev-portfolio/browser/ "$DIST_DIR/"
 
 echo "=== 5/5 levantar/actualizar contenedor portfolio ==="
 cd "$HOME/data/repos/darknezz-infra"
-docker compose up -d portfolio
+docker compose up -d --force-recreate portfolio
 docker compose ps portfolio
 
 # Limpiar directorio temporal (trap se encarga)
