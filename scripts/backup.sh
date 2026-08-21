@@ -10,10 +10,11 @@ BK="${DATA}/backups"
 REPO="${DATA}/docker"
 STAMP="$(date -Is)"
 LOG="${BK}/backup.log"
+STATUS="${BK}/backup.status"
 
 mkdir -p "${BK}/hermes"
 
-{
+run_backup() {
   echo "=== backup ${STAMP} ==="
 
   # 1. Certificados Let's Encrypt (traefik los necesita en DR; re-emitibles pero mejor tenerlos)
@@ -77,6 +78,14 @@ mkdir -p "${BK}/hermes"
 
   chmod -R u+rwX,go-rwx "${BK}"
   echo "=== backup OK (total: $(du -sh "${BK}" | cut -f1)) ==="
-} >> "${LOG}" 2>&1
+}
 
-echo "backup OK — ver ${LOG}"
+# Ejecutar backup y capturar exito/fallo
+if run_backup >> "${LOG}" 2>&1; then
+  echo "OK $(date -Is)" > "${STATUS}"
+  echo "backup OK — ver ${LOG}"
+else
+  echo "FAILED $(date -Is)" > "${STATUS}"
+  echo "backup FAILED — ver ${LOG}"
+  exit 1
+fi
