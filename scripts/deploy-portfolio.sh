@@ -7,17 +7,19 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 SHA="${PORTFOLIO_SHA:-main}"
-SRC_DIR="$HOME/data/portfolio-src"
-DIST_DIR="$HOME/data/portfolio-dist"
+DEPLOY_DIR="$HOME/data/deploy"
+DIST_DIR="$DEPLOY_DIR/portfolio-dist"
 REPO_URL="git@github.com:YamiDarknezz/DarknezzDev.git"
 
 echo "=== 1/5 clonar/fetch DarknezzDev @ ${SHA} ==="
-if [ ! -d "$SRC_DIR/.git" ]; then
-  git clone --filter=blob:none "$REPO_URL" "$SRC_DIR"
-fi
-cd "$SRC_DIR"
-git fetch --depth 1 origin "$SHA"
-git checkout -q FETCH_HEAD
+# Clonar en directorio temporal para limpieza
+BUILD_DIR=$(mktemp -d)
+trap "rm -rf $BUILD_DIR" EXIT
+
+git clone --filter=blob:none --depth 1 "$REPO_URL" "$BUILD_DIR/src"
+cd "$BUILD_DIR/src"
+git fetch --depth 1 origin "$SHA" 2>/dev/null || true
+git checkout -q "$SHA" 2>/dev/null || git checkout -q main
 COMMIT_DESC=$(git log -1 --format='%h %s')
 
 echo "=== 2/5 instalar dependencias (pnpm) ==="
@@ -33,8 +35,9 @@ mkdir -p "$DIST_DIR"
 rsync -a --delete dist/darknezzdev-portfolio/browser/ "$DIST_DIR/"
 
 echo "=== 5/5 levantar/actualizar contenedor portfolio ==="
-cd "$HOME/data/docker"
+cd "$HOME/data/repos/darknezz-infra"
 docker compose up -d portfolio
 docker compose ps portfolio
 
+# Limpiar directorio temporal (trap se encarga)
 echo "DONE — desplegado: ${COMMIT_DESC}"
