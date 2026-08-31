@@ -1,8 +1,223 @@
-# 🐘 PostgreSQL TCP Routing via Traefik — Documentación
+# 🐘 PostgreSQL 18 en VPS darknezz — Documentación Completa
 
 ## Escenario
 
-PostgreSQL 18 corre como contenedor Docker en un VPS con Traefik v3.7.10 como reverse proxy. El objetivo es exponer PostgreSQL a través de Traefik en el puerto 5432, con SSL habilitado vía certificados Let's Encrypt.
+PostgreSQL 18 corre como contenedor Docker en un VPS (Oracle Cloud Always Free) con Traefik v3.7.10 como reverse proxy. PostgreSQL se expone a través de Traefik en el puerto 5432, con SSL habilitado vía certificados Let's Encrypt.
+
+## Proceso de instalación completo
+
+### Paso 1: Crear directorios y credenciales
+
+```bash
+# Directorios para datos y configuración
+mkdir -p ~/data/volumes/postgres/data
+mkdir -p ~/data/volumes/postgres/config
+
+# Generar contraseña segura (sin caracteres problemáticos para URLs)
+PG_PASS="REDACTED_DB_PASSWORD"
+echo "$PG_PASS" > ~/data/secrets/postgres-password.txt
+chmod 600 ~/data/secrets/postgres-password.txt
+```
+
+### Paso 2: Instalar certbot y plugin Cloudflare
+
+```bash
+# Matar procesos apt atascados si existen
+sudo kill $(pgrep -f "apt upgrade") 2>/dev/null
+sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock
+sudo dpkg --configure -a
+
+# Instalar certbot
+sudo apt-get update -qq && sudo apt-get install -y -qq certbot python3-certbot-dns-cloudflare
+
+# Credenciales de Cloudflare para certbot
+sudo mkdir -p /etc/letsencrypt
+echo "dns_cloudflare_api_token = <CLOUDFLARE_TOKEN>" | sudo tee /etc/letsencrypt/cloudflare.ini
+sudo chmod 600 /etc/letsencrypt/cloudflare.ini
+```
+
+### Paso 3: Solicitar certificado SSL
+
+```bash
+sudo certbot certonly --dns-cloudflare \
+  --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
+  -d postgresql.darknezz.dev \
+  --non-interactive --agree-tos \
+  --email yami@darknezz.dev
+```
+
+Certificados guardados en:
+- `/etc/letsencrypt/live/postgresql.darknezz.dev/fullchain.pem`
+- `/etc/letsencrypt/live/postgresql.darknezz.dev/privkey.pem`
+
+### Paso 4: Crear docker-compose de PostgreSQL
+
+Archivo: `services/postgres/docker-compose.yml`
+
+```yaml
+services:
+  postgres:
+    image: postgres:18
+    container_name: postgres
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    environment:
+      - POSTGRES_USER=yamidarknezz
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+      - POSTGRES_DB=darknezz
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - /home/yami/data/volumes/postgres/data:/var/lib/postgresql/data
+      - /home/yami/data/secrets/postgres-password.txt:/run/secrets/postgres_password:ro
+    secrets:
+      - postgres_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yamidarknezz -d darknezz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+secrets:
+  postgres_password:
+    file: /home/yami/data/secrets/postgres-password.txt
+
+networks:
+  proxy:
+    external: true
+```
+
+**Importante**: No hay `ports:` — PostgreSQL NO expone puertos al host. Solo accesible via red proxy y Traefik.
+
+### Paso 5: Iniciar PostgreSQL
+
+```bash
+cd ~/data/repos/darknezz-infra/services/postgres && docker compose up -d
+```
+
+### Paso 6: Habilitar SSL en PostgreSQL
+
+```bash
+# Copiar certificados al contenedor
+PGID=$(docker ps -q --filter name=postgres)
+
+sudo cat /etc/letsencrypt/live/postgresql.darknezz.dev/fullchain.pem | \
+  docker exec -i $PGID sh -c "cat > /var/lib/postgresql/data/pgdata/server.crt"
+
+sudo cat /etc/letsencrypt/live/postgresql.darknezz.dev/privkey.pem | \
+  docker exec -i $PGID sh -c "cat > /var/lib/postgresql/data/pgdata/server.key"
+
+docker exec $PGID chmod 600 /var/lib/postgresql/data/pgdata/server.crt /var/lib/postgresql/data/pgdata/server.key
+docker exec $PGID chown postgres:postgres /var/lib/postgresql/data/pgdata/server.crt /var/lib/postgresql/data/pgdata/server.key
+
+# Habilitar SSL en postgresql.conf
+docker exec $PGID sed -i "s/^#ssl = off/ssl = on/" /var/lib/postgresql/data/pgdata/postgresql.conf
+docker exec $PGID sed -i "s/^#ssl_cert_file = .*/ssl_cert_file = 'server.crt'/" /var/lib/postgresql/data/pgdata/postgresql.conf
+docker exec $PGID sed -i "s/^#ssl_key_file = .*/ssl_key_file = 'server.key'/" /var/lib/postgresql/data/pgdata/postgresql.conf
+
+# Reiniciar PostgreSQL
+docker restart $PGID
+```
+
+### Paso 7: Crear usuario y permisos
+
+```bash
+docker exec postgres psql -U yamidarknezz -d darknezz -c "
+ALTER USER yamidarknezz WITH PASSWORD 'REDACTED_DB_PASSWORD';
+GRANT ALL PRIVILEGES ON DATABASE darknezz TO yamidarknezz;
+ALTER USER yamidarknezz CREATEDB;
+"
+```
+
+### Paso 8: Configurar Traefik
+
+**traefik/traefik.yml** — agregar entryPoint:
+
+```yaml
+entryPoints:
+  postgres:
+    address: ":5432"
+```
+
+**traefik/dynamic/postgres-ssl.yml** — TCP router:
+
+```yaml
+tcp:
+  routers:
+    postgres-direct:
+      rule: "HostSNI(`*`)"
+      entryPoints:
+        - "postgres"
+      service: "postgres-service"
+  services:
+    postgres-service:
+      loadBalancer:
+        servers:
+          - address: "postgres:5432"
+```
+
+**docker-compose.yml** — agregar puerto a Traefik:
+
+```yaml
+ports:
+  - "80:80"
+  - "443:443"
+  - "5432:5432"
+```
+
+### Paso 9: Reiniciar Traefik
+
+```bash
+cd ~/data/repos/darknezz-infra && docker compose up -d traefik --force-recreate
+```
+
+### Paso 10: Abrir puerto en Oracle Cloud
+
+Oracle Cloud Console → Networking → VCN → Security Lists → Add Ingress Rule:
+- **Source CIDR**: `0.0.0.0/0` (o IP específica)
+- **Destination Port**: `5432`
+- **Protocol**: TCP
+
+### Paso 11: Verificar conexión
+
+```bash
+# Con SSL
+PGPASSWORD=REDACTED_DB_PASSWORD psql "host=postgresql.darknezz.dev port=5432 user=yamidarknezz dbname=darknezz sslmode=require" -c "SELECT 1;"
+
+# Verificar SSL
+PGPASSWORD=REDACTED_DB_PASSWORD psql "host=postgresql.darknezz.dev port=5432 user=yamidarknezz dbname=darknezz sslmode=require" -c "SHOW ssl;"
+```
+
+### Paso 12: Actualizar .env
+
+```bash
+# Agregar al .env
+POSTGRES_HOST=postgresql.darknezz.dev
+POSTGRES_PORT=5432
+POSTGRES_DB=darknezz
+POSTGRES_USER=yamidarknezz
+POSTGRES_PASSWORD=REDACTED_DB_PASSWORD
+```
+
+### Paso 13: Commit al repo
+
+```bash
+cd ~/data/repos/darknezz-infra
+git add .
+git commit -m "feat: PostgreSQL 18 with SSL via Traefik TCP routing"
+```
+
+---
+
+## TCP Routing via Traefik
 
 ## Arquitectura Final
 
