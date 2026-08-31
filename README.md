@@ -6,15 +6,15 @@
 
 ```
 darknezz-infra/
-├── docker-compose.yml           # Traefik + Prometheus + Grafana
+├── docker-compose.yml           # Traefik + PostgreSQL + Prometheus + Grafana
 ├── .env.example                 # Secrets template (copy to .env, never commit)
 ├── traefik/
 │   ├── traefik.yml              # Main config (entrypoints, metrics, certs)
 │   └── dynamic/
 │       ├── middlewares.yml      # Rate limiting + BasicAuth
-│       └── postgres-ssl.yml     # TCP router for PostgreSQL (TLS passthrough)
+│       └── postgres-ssl.yml     # TCP router for PostgreSQL (port 5432)
 ├── services/
-│   ├── postgres/                # PostgreSQL 18 with SSL
+│   ├── postgres/                # PostgreSQL 18 with SSL (Let's Encrypt)
 │   ├── prometheus/              # prometheus.yml (scrape de traefik)
 │   └── grafana/                 # provisioning/ (datasource + dashboard Traefik)
 ├── configs/
@@ -24,7 +24,7 @@ darknezz-infra/
 │   ├── deploy.sh               # git pull + compose up + optional prune
 │   ├── backup.sh               # Weekly: acme.json + .env + secrets + Hermes → data/backups
 │   └── setup-fail2ban.sh       # Instala fail2ban desde configs/ (replicable)
-└── docs/                        # VPS_SETUP.md + FAIL2BAN.md — SOLO LOCAL en el VPS (gitignored, detalles de infra)
+└── docs/                        # Documentación técnica (POSTGRES_TCP_ROUTING.md, RECOVERY.md, etc.)
 ```
 
 ## Subdomain convention
@@ -33,7 +33,7 @@ One project = one prefixed subdomain under a wildcard DNS record (`*.darknezz.de
 
 | Subdomain | Purpose |
 |---|---|
-| `www.darknezz.dev` / `api.darknezz.dev` | **Main site** — reserved for the primary project |
+| `www.darknezz.dev` | **Main site** — portfolio |
 | `postgresql.darknezz.dev` | PostgreSQL 18 (SSL, port 5432) |
 | `traefik.darknezz.dev` | Traefik dashboard (BasicAuth-protected) |
 | `grafana.darknezz.dev` | Grafana dashboards (login propio) |
@@ -65,7 +65,7 @@ Copy `.env.example` → `.env` with real values:
 | `DOMAIN` | Base domain interpolated into Traefik router labels |
 | `ACME_EMAIL` | Let's Encrypt account email |
 | `DASHBOARD_HASH` | Traefik dashboard BasicAuth (`openssl passwd -apr1`) |
-| `JWT_SECRET` | inventory-api JWT signing |
+| `JWT_SECRET` | JWT signing (futuros servicios) |
 | `POSTGRES_HOST` / `POSTGRES_PORT` | PostgreSQL host and port |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | PostgreSQL credentials |
 | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | Grafana admin (first login) |
