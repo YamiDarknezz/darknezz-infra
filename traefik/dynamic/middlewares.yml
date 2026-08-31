@@ -3,3 +3,14 @@ http:
     dashboard-auth:
       basicAuth:
         usersFile: /dynamic/.htpasswd
+    ratelimit-http:
+      rateLimit:
+        average: 30
+        burst: 60
+    ratelimit-api:
+      rateLimit:
+        average: 10
+        burst: 30
+    prometheus-auth:
+      basicAuth:
+        usersFile: /dynamic/.htpasswd

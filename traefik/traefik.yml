@@ -30,6 +30,8 @@ entryPoints:
     http:
       tls:
         certResolver: letsencrypt
+  postgres:
+    address: ":5432"
 
 providers:
   docker:
@@ -44,7 +46,7 @@ providers:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: <EMAIL>
+      email: erick.plasencia54@gmail.com
       storage: /acme.json
       dnsChallenge:
         provider: cloudflare

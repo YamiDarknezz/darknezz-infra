@@ -46,34 +46,28 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  inventory-api:
-    build:
-      context: ./services/inventory-api
-      args:
-        INVENTORY_SHA: ${INVENTORY_SHA:-main}
-    container_name: inventory-api
+  portfolio:
+    image: nginx:1.27-alpine
+    container_name: portfolio
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - DB_URL=${DB_URL}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - /home/yami/data/deploy/portfolio-dist:/usr/share/nginx/html:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`api-inventory.${DOMAIN}`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.api.middlewares=ratelimit-api"
-      - "traefik.http.services.api.loadbalancer.server.port=8080"
+      - "traefik.http.routers.portfolio.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.portfolio.entrypoints=websecure"
+      - "traefik.http.routers.portfolio.tls.certresolver=letsencrypt"
+      - "traefik.http.services.portfolio.loadbalancer.server.port=80"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
       interval: 30s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 3
+      start_period: 10s
     logging:
       driver: json-file
       options:
@@ -110,17 +104,36 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    container_name: node-exporter
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    labels:
+      - "traefik.enable=false"
+
   grafana:
     image: grafana/grafana:13.1.3
     container_name: grafana
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_ANALYTICS_REPORTING_ENABLED=false
     volumes:
       - $HOME/data/volumes/grafana:/var/lib/grafana
       - ./services/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -128,37 +141,14 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN}`)"
       - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.middlewares=ratelimit-http"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 15s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  node-exporter:
-    image: prom/node-exporter:v1.9.1
-    container_name: node-exporter
-    restart: unless-stopped
-    networks:
-      - proxy
-    pid: host
-    read_only: true
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.rootfs=/host'
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-    labels:
-      - "traefik.enable=false"
+      start_period: 30s
     logging:
       driver: json-file
       options:
@@ -169,55 +159,18 @@ services:
     image: prom/alertmanager:v0.33.1
     container_name: alertmanager
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
+    volumes:
+      - $HOME/data/alertmanager-data:/alertmanager
+      - $HOME/data/secrets/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
-    volumes:
-      - $HOME/data/secrets/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - $HOME/data/volumes/alertmanager:/alertmanager
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9093/-/healthy"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  portfolio:
-    image: nginx:1.27-alpine
-    container_name: portfolio
-    restart: unless-stopped
-    networks:
-      - proxy
-    volumes:
-      - $HOME/data/deploy/portfolio-dist:/usr/share/nginx/html:ro
-      - ./services/portfolio/nginx.conf:/etc/nginx/conf.d/portfolio.conf:ro
-      # Neutraliza el default.conf de la imagen (escucha en :80 y gana por orden alfabético)
-      - /dev/null:/etc/nginx/conf.d/default.conf
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.portfolio.rule=Host(`darknezz.dev`)"
-      - "traefik.http.routers.portfolio.entrypoints=websecure"
-      - "traefik.http.routers.portfolio.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.portfolio.middlewares=ratelimit-http"
-      - "traefik.http.services.portfolio.loadbalancer.server.port=80"
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - "traefik.enable=false"
 
 networks:
   proxy:
