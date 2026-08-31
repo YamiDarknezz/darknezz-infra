@@ -1,16 +1,10 @@
-# TCP Router para PostgreSQL — postgresql.darknezz.dev
-# TLS passthrough: Traefik lee SNI y pasa el tráfico directo a PostgreSQL
-
 tcp:
   routers:
-    postgres-secure:
-      rule: "HostSNI(`postgresql.darknezz.dev`)"
+    postgres-direct:
+      rule: "HostSNI(`*`)"
       entryPoints:
         - "postgres"
       service: "postgres-service"
-      tls:
-        passthrough: true
-
   services:
     postgres-service:
       loadBalancer:

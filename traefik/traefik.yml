@@ -1,6 +1,9 @@
 global:
   sendAnonymousUsage: false
 
+log:
+  level: INFO
+
 api:
   dashboard: true
 

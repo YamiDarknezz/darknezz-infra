@@ -10,6 +10,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "5432:5432"
     environment:
       - CF_DNS_API_TOKEN=${CLOUDFLARE_TOKEN}
     volumes:

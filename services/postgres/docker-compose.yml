@@ -1,5 +1,6 @@
 # PostgreSQL 18 — darknezz.dev
-# Acceso directo en puerto 5432 (sin SSL por ahora)
+# Acceso via Traefik (TLS passthrough) en postgresql.darknezz.dev:5432
+# NO expone puertos al host — solo accesible desde la red proxy
 
 services:
   postgres:
@@ -10,8 +11,6 @@ services:
       - no-new-privileges:true
     networks:
       - proxy
-    ports:
-      - "127.0.0.1:5432:5432"
     environment:
       - POSTGRES_USER=yamidarknezz
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
