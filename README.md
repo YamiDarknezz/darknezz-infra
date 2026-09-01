@@ -14,9 +14,11 @@ darknezz-infra/
 │       ├── middlewares.yml      # Rate limiting + BasicAuth
 │       └── postgres-ssl.yml     # TCP router for PostgreSQL (port 5432)
 ├── services/
+│   ├── inventory-api/           # Spring Boot API (PostgreSQL local)
 │   ├── postgres/                # PostgreSQL 18 with SSL (Let's Encrypt)
 │   ├── prometheus/              # prometheus.yml (scrape de traefik)
-│   └── grafana/                 # provisioning/ (datasource + dashboard Traefik)
+│   ├── grafana/                 # provisioning/ (datasource + dashboard Traefik)
+│   └── portfolio/               # nginx.conf (static site)
 ├── configs/
 │   └── fail2ban/               # jail.local + filter traefik-auth (templates replicables)
 ├── scripts/
@@ -34,6 +36,7 @@ One project = one prefixed subdomain under a wildcard DNS record (`*.darknezz.de
 | Subdomain | Purpose |
 |---|---|
 | `www.darknezz.dev` | **Main site** — portfolio |
+| `api-inventory.darknezz.dev` | inventory-api (Spring Boot, PostgreSQL local) |
 | `postgresql.darknezz.dev` | PostgreSQL 18 (SSL, port 5432) |
 | `traefik.darknezz.dev` | Traefik dashboard (BasicAuth-protected) |
 | `grafana.darknezz.dev` | Grafana dashboards (login propio) |
