@@ -149,6 +149,7 @@ services:
     image: filebrowser/filebrowser:latest
     container_name: filebrowser
     restart: unless-stopped
+    user: "1002:1002"
     security_opt:
       - no-new-privileges:true
     networks:
@@ -156,7 +157,7 @@ services:
     volumes:
       - /:/data:ro
       - ./services/filebrowser/settings.json:/config/settings.json:ro
-      - filebrowser-db:/database
+      - /home/yami/data/filebrowser-db:/database
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.filebrowser.rule=Host(`filebrowser.${DOMAIN}`)"
@@ -175,9 +176,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-volumes:
-  filebrowser-db:
 
 networks:
   proxy:
