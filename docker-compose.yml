@@ -154,7 +154,7 @@ services:
     networks:
       - proxy
     volumes:
-      - /home/yami/data:/data
+      - /:/data:ro
       - ./services/filebrowser/config.json:/config/config.json:ro
       - filebrowser-db:/config
     environment:
