@@ -3,6 +3,6 @@
   "baseURL": "",
   "address": "",
   "log": "stdout",
-  "database": "/config/filebrowser.db",
+  "database": "/database/filebrowser.db",
   "root": "/data"
 }

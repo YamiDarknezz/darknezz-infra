@@ -155,11 +155,8 @@ services:
       - proxy
     volumes:
       - /:/data:ro
-      - ./services/filebrowser/config.json:/config/config.json:ro
-      - filebrowser-db:/config
-    environment:
-      - FB_USERNAME=${FILEBROWSER_USER}
-      - FB_PASSWORD=${FILEBROWSER_PASSWORD}
+      - ./services/filebrowser/settings.json:/config/settings.json:ro
+      - filebrowser-db:/database
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.filebrowser.rule=Host(`filebrowser.${DOMAIN}`)"
