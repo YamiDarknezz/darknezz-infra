@@ -1,7 +1,7 @@
 #!/bin/bash
-# deploy.sh — actualiza y redeploya la infra (se ejecuta desde /home/<USER>/docker)
-# Uso: ./scripts/deploy.sh [--prune]      (INVENTORY_SHA env = commit a desplegar)
-#   --prune  → además limpia imágenes/volúmenes/redes no usados (patrón Pauser)
+# deploy.sh — actualiza y redeploya infraestructura (se ejecuta desde ~/data/docker)
+# Uso: ./scripts/deploy.sh [--prune]
+#   --prune  → además limpia imágenes/volúmenes/redes no usados
 set -e
 cd "$(dirname "$0")/.."
 
