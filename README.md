@@ -6,7 +6,7 @@
 
 ```
 darknezz-infra/
-├── docker-compose.yml           # Traefik + PostgreSQL + Prometheus + Grafana
+├── docker-compose.yml           # Traefik + Prometheus + Grafana + AlertManager
 ├── .env.example                 # Secrets template (copy to .env, never commit)
 ├── traefik/
 │   ├── traefik.yml              # Main config (entrypoints, metrics, certs)
@@ -14,11 +14,10 @@ darknezz-infra/
 │       ├── middlewares.yml      # Rate limiting + BasicAuth
 │       └── postgres-ssl.yml     # TCP router for PostgreSQL (port 5432)
 ├── services/
-│   ├── inventory-api/           # Spring Boot API (PostgreSQL local)
 │   ├── postgres/                # PostgreSQL 18 with SSL (Let's Encrypt)
 │   ├── prometheus/              # prometheus.yml (scrape de traefik)
 │   ├── grafana/                 # provisioning/ (datasource + dashboard Traefik)
-│   └── portfolio/               # nginx.conf (static site)
+│   └── alertmanager/            # (config via secrets/)
 ├── configs/
 │   └── fail2ban/               # jail.local + filter traefik-auth (templates replicables)
 ├── scripts/
@@ -26,23 +25,23 @@ darknezz-infra/
 │   ├── deploy.sh               # git pull + compose up + optional prune
 │   ├── backup.sh               # Weekly: acme.json + .env + secrets + Hermes → data/backups
 │   └── setup-fail2ban.sh       # Instala fail2ban desde configs/ (replicable)
-└── docs/                        # Documentación técnica (POSTGRES_TCP_ROUTING.md, RECOVERY.md, etc.)
+└── docs/                        # Documentación técnica (VPS_SETUP.md, POSTGRES_TCP_ROUTING.md, etc.)
 ```
+
+> **Apps personales** (portfolio, inventory-api) están en sus propios repos.
+> Deploy de portfolio: `DarknezzDev/deploy/deploy.sh`
+> Deploy de inventory-api: `inventory-api/deploy/docker-compose.yml`
 
 ## Subdomain convention
 
-One project = one prefixed subdomain under a wildcard DNS record (`*.darknezz.dev` already points to the VM):
-
 | Subdomain | Purpose |
 |---|---|
-| `www.darknezz.dev` | **Main site** — portfolio |
+| `darknezz.dev` | Portfolio (DarknezzDev) |
 | `api-inventory.darknezz.dev` | inventory-api (Spring Boot, PostgreSQL local) |
 | `postgresql.darknezz.dev` | PostgreSQL 18 (SSL, port 5432) |
 | `traefik.darknezz.dev` | Traefik dashboard (BasicAuth-protected) |
 | `grafana.darknezz.dev` | Grafana dashboards (login propio) |
 | `prometheus.darknezz.dev` | Prometheus UI (BasicAuth del dashboard) |
-
-Rule: every project gets a descriptive prefix (`api-`, `app-`, `ui-`). Generic subdomains stay reserved. The base domain is configurable via the `DOMAIN` variable in `.env`.
 
 ## Quick start (on the VM)
 
@@ -68,12 +67,11 @@ Copy `.env.example` → `.env` with real values:
 | `DOMAIN` | Base domain interpolated into Traefik router labels |
 | `ACME_EMAIL` | Let's Encrypt account email |
 | `DASHBOARD_HASH` | Traefik dashboard BasicAuth (`openssl passwd -apr1`) |
-| `JWT_SECRET` | JWT signing (futuros servicios) |
 | `POSTGRES_HOST` / `POSTGRES_PORT` | PostgreSQL host and port |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | PostgreSQL credentials |
 | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | Grafana admin (first login) |
 
-The `.env` lives ONLY on the VM at `$HOME/data/docker/.env` (backed up to `data/backups/env.compose.backup` by `backup.sh`). This repo only has `.env.example` with placeholders. The Prometheus scrape password lives in `$HOME/data/secrets/traefik-metrics.password` (chmod 640, outside the repo).
+The `.env` lives ONLY on the VM at `$HOME/data/docker/.env` (backed up to `data/backups/env.compose.backup` by `backup.sh`). This repo only has `.env.example` with placeholders.
 
 ## PostgreSQL
 
