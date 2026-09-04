@@ -137,7 +137,7 @@ services:
     networks:
       - proxy
     volumes:
-      - $HOME/data/alertmanager-data:/alertmanager
+      - $HOME/data/volumes/alertmanager:/alertmanager
       - $HOME/data/secrets/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
@@ -157,7 +157,7 @@ services:
     volumes:
       - /:/data:ro
       - ./services/filebrowser/settings.json:/config/settings.json:ro
-      - /home/yami/data/filebrowser-db:/database
+      - /home/yami/data/volumes/filebrowser:/database
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.filebrowser.rule=Host(`filebrowser.${DOMAIN}`)"
