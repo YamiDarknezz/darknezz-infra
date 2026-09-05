@@ -177,34 +177,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  uptime-kuma:
-    image: louislam/uptime-kuma:latest
-    container_name: uptime-kuma
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    networks:
-      - proxy
-    volumes:
-      - /home/yami/data/volumes/uptime-kuma:/app/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.uptime-kuma.rule=Host(`uptime.${DOMAIN}`)"
-      - "traefik.http.routers.uptime-kuma.entrypoints=websecure"
-      - "traefik.http.routers.uptime-kuma.tls.certresolver=letsencrypt"
-      - "traefik.http.services.uptime-kuma.loadbalancer.server.port=3001"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001/ || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
   adminer:
     image: adminer:latest
     container_name: adminer
