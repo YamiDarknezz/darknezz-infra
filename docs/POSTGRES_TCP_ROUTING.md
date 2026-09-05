@@ -14,7 +14,7 @@ mkdir -p ~/data/volumes/postgres/data
 mkdir -p ~/data/volumes/postgres/config
 
 # Generar contraseña segura (sin caracteres problemáticos para URLs)
-PG_PASS="REDACTED_DB_PASSWORD"
+PG_PASS="${POSTGRES_PASSWORD}"
 echo "$PG_PASS" > ~/data/secrets/postgres-password.txt
 chmod 600 ~/data/secrets/postgres-password.txt
 ```
@@ -65,7 +65,7 @@ services:
     networks:
       - proxy
     environment:
-      - POSTGRES_USER=yamidarknezz
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
       - POSTGRES_DB=darknezz
       - PGDATA=/var/lib/postgresql/data/pgdata
@@ -75,7 +75,7 @@ services:
     secrets:
       - postgres_password
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yamidarknezz -d darknezz"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -130,10 +130,10 @@ docker restart $PGID
 ### Paso 7: Crear usuario y permisos
 
 ```bash
-docker exec postgres psql -U yamidarknezz -d darknezz -c "
-ALTER USER yamidarknezz WITH PASSWORD 'REDACTED_DB_PASSWORD';
-GRANT ALL PRIVILEGES ON DATABASE darknezz TO yamidarknezz;
-ALTER USER yamidarknezz CREATEDB;
+docker exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "
+ALTER USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';
+GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER};
+ALTER USER ${POSTGRES_USER} CREATEDB;
 "
 ```
 
@@ -190,10 +190,10 @@ Oracle Cloud Console → Networking → VCN → Security Lists → Add Ingress R
 
 ```bash
 # Con SSL
-PGPASSWORD=REDACTED_DB_PASSWORD psql "host=postgresql.darknezz.dev port=5432 user=yamidarknezz dbname=darknezz sslmode=require" -c "SELECT 1;"
+PGPASSWORD=${POSTGRES_PASSWORD} psql "host=postgresql.darknezz.dev port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} sslmode=require" -c "SELECT 1;"
 
 # Verificar SSL
-PGPASSWORD=REDACTED_DB_PASSWORD psql "host=postgresql.darknezz.dev port=5432 user=yamidarknezz dbname=darknezz sslmode=require" -c "SHOW ssl;"
+PGPASSWORD=${POSTGRES_PASSWORD} psql "host=postgresql.darknezz.dev port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} sslmode=require" -c "SHOW ssl;"
 ```
 
 ### Paso 12: Actualizar .env
@@ -203,8 +203,8 @@ PGPASSWORD=REDACTED_DB_PASSWORD psql "host=postgresql.darknezz.dev port=5432 use
 POSTGRES_HOST=postgresql.darknezz.dev
 POSTGRES_PORT=5432
 POSTGRES_DB=darknezz
-POSTGRES_USER=yamidarknezz
-POSTGRES_PASSWORD=REDACTED_DB_PASSWORD
+POSTGRES_USER=${POSTGRES_USER}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 ```
 
 ### Paso 13: Commit al repo
@@ -392,7 +392,7 @@ services:
     networks:
       - proxy
     environment:
-      - POSTGRES_USER=yamidarknezz
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
       - POSTGRES_DB=darknezz
     volumes:
@@ -412,13 +412,13 @@ networks:
 
 ```bash
 # Con SSL (recomendado)
-PGPASSWORD=xxx psql "host=127.0.0.1 port=5432 user=yamidarknezz dbname=darknezz sslmode=require"
+PGPASSWORD=xxx psql "host=127.0.0.1 port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} sslmode=require"
 
 # Sin SSL
-PGPASSWORD=xxx psql "host=127.0.0.1 port=5432 user=yamidarknezz dbname=darknezz sslmode=disable"
+PGPASSWORD=xxx psql "host=127.0.0.1 port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} sslmode=disable"
 
 # Verificar SSL
-PGPASSWORD=xxx psql "host=127.0.0.1 port=5432 user=yamidarknezz dbname=darknezz sslmode=require" -c "SHOW ssl;"
+PGPASSWORD=xxx psql "host=127.0.0.1 port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} sslmode=require" -c "SHOW ssl;"
 ```
 
 ## Acceso externo
@@ -476,7 +476,7 @@ sudo cat /etc/letsencrypt/live/postgresql.darknezz.dev/privkey.pem | \
   docker exec -i $PGID sh -c "cat > /var/lib/postgresql/data/pgdata/server.key"
 docker exec $PGID chmod 600 /var/lib/postgresql/data/pgdata/server.crt /var/lib/postgresql/data/pgdata/server.key
 docker exec $PGID chown postgres:postgres /var/lib/postgresql/data/pgdata/server.crt /var/lib/postgresql/data/pgdata/server.key
-docker exec $PGID psql -U yamidarknezz -d darknezz -c "SELECT pg_reload_conf();"
+docker exec $PGID psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "SELECT pg_reload_conf();"
 ```
 
 ## Credenciales
@@ -494,7 +494,7 @@ docker exec $PGID psql -U yamidarknezz -d darknezz -c "SELECT pg_reload_conf();"
 ### PostgreSQL no acepta conexiones
 ```bash
 docker logs postgres --tail 20
-docker exec postgres pg_isready -U yamidarknezz -d darknezz
+docker exec postgres pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 ```
 
 ### Traefik no enruta TCP
@@ -505,7 +505,7 @@ docker exec traefik cat /dynamic/postgres-ssl.yml
 
 ### SSL no funciona
 ```bash
-docker exec postgres psql -U yamidarknezz -d darknezz -c "SHOW ssl;"
+docker exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "SHOW ssl;"
 docker exec postgres openssl x509 -in /var/lib/postgresql/data/pgdata/server.crt -noout -subject -dates
 ```
 

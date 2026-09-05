@@ -81,10 +81,10 @@ PostgreSQL 18 runs as a Docker container with SSL enabled via Let's Encrypt.
 
 ```bash
 # Local connection (from VPS)
-PGPASSWORD=<password> psql -h 127.0.0.1 -p 5432 -U yamidarknezz -d darknezz
+PGPASSWORD=$POSTGRES_PASSWORD psql -h 127.0.0.1 -p 5432 -U $POSTGRES_USER -d $POSTGRES_DB
 
 # Remote connection (via domain)
-PGPASSWORD=<password> psql -h postgresql.darknezz.dev -p 5432 -U yamidarknezz -d darknezz
+PGPASSWORD=$POSTGRES_PASSWORD psql -h postgresql.darknezz.dev -p 5432 -U $POSTGRES_USER -d $POSTGRES_DB
 ```
 
 ### SSL Configuration

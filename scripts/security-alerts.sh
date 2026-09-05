@@ -5,8 +5,11 @@
 # Cron: cada 5 minutos. Silencioso si no hay nada nuevo (patrón watchdog).
 set -uo pipefail
 
-TOKEN=$(grep '^TELEGRAM_BOT_TOKEN=' /home/yami/data/docker/.env | head -1 | cut -d= -f2-)
-CHAT=5069336124
+# Leer secrets de .env
+source /home/yami/data/repos/darknezz-infra/.env 2>/dev/null
+
+TOKEN="${TELEGRAM_BOT_TOKEN}"
+CHAT="${TELEGRAM_CHAT_ID}"
 STATE=/home/yami/data/secrets/security-alerts.state
 FAIL2BAN_LOG=/var/log/fail2ban.log
 
@@ -41,11 +44,7 @@ fi
 echo "${SIZE}" > "${STATE}"
 
 # ---------- 2) Logins SSH con clave no autorizada ----------
-# Claves autorizadas (fingerprints SIN prefijo SHA256:) — yami@darknezz + github-actions-deploy
-ALLOWED_KEYS="REDACTED_SSH_KEYS"
-# IPs silenciadas (trabajo y casa de Gerardo) — capa extra; la clave sigue siendo la autoridad
-ALLOWED_IPS="REDACTED_IPS"
-
+# ALLOWED_KEYS e ALLOWED_IPS se leen de .env
 while IFS= read -r line; do
   fp=$(echo "$line" | grep -oP 'SHA256:[A-Za-z0-9+/]+' | head -1)
   fp=${fp#SHA256:}   # normalizar: quitar prefijo para comparar con allowlist

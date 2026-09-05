@@ -12,9 +12,9 @@ services:
     networks:
       - proxy
     environment:
-      - POSTGRES_USER=yamidarknezz
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
-      - POSTGRES_DB=darknezz
+      - POSTGRES_DB=${POSTGRES_DB}
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - /home/yami/data/volumes/postgres/data:/var/lib/postgresql/data
@@ -22,7 +22,7 @@ services:
     secrets:
       - postgres_password
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yamidarknezz -d darknezz"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 30s
       timeout: 5s
       retries: 3
