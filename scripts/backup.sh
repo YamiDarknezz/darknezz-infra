@@ -2,7 +2,6 @@
 # backup.sh — resiliencia: refresca los backups del block volume.
 # La filosofía: la VM es desechable, /home/yami/data sobrevive a la reclamación de Oracle.
 # Ejecutar manualmente o vía cron (junto al prune semanal de los domingos).
-source "${INFRA}/.env" 2>/dev/null || true
 # Uso: ./scripts/backup.sh
 set -euo pipefail
 
@@ -12,6 +11,9 @@ INFRA="${HOME}/data/repos/darknezz-infra"
 STAMP="$(date -Is)"
 LOG="${BK}/backup.log"
 STATUS="${BK}/backup.status"
+
+# Cargar secrets de .env después de definir INFRA
+source "${INFRA}/.env" 2>/dev/null || true
 
 mkdir -p "${BK}/hermes"
 
@@ -31,8 +33,8 @@ run_backup() {
   fi
 
   # 4. PostgreSQL dump (backup de la base de datos)
-  if docker exec postgres pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} >/dev/null 2>&1; then
-    docker exec postgres pg_dump -U ${POSTGRES_USER} -d ${POSTGRES_DB} -Fc > "${BK}/postgres-darknezz.dump" 2>/dev/null
+  if docker exec postgres pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1; then
+    docker exec postgres pg_dump -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Fc > "${BK}/postgres-darknezz.dump" 2>/dev/null
     echo "  ✓ PostgreSQL dump (postgres-darknezz.dump, $(du -sh "${BK}/postgres-darknezz.dump" | cut -f1))"
   else
     echo "  ⚠ PostgreSQL no disponible, skip dump"
