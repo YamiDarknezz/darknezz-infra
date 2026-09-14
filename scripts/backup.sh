@@ -49,7 +49,17 @@ run_backup() {
     "${HOME}/.hermes/" "${BK}/hermes/"
   echo "  ✓ Hermes (config + memorias + skills + state)"
 
-  # 6. Config de sistema del BOOT (crítico para DR)
+  # 6. Deploys de PROYECTOS: compose + conf.d + .env de cada app.
+  # No viven en git (son artefactos del VPS), así que sin esto no se pueden rearmar.
+  # Los *-dist se excluyen: son regenerables desde el repo con el CI.
+  if [ -d "${DATA}/deploy" ]; then
+    rsync -a --delete --exclude='*-dist/' "${DATA}/deploy/" "${BK}/deploy/"
+    echo "  ✓ deploys de proyectos (compose + conf.d + .env, sin *-dist)"
+  else
+    echo "  ⚠ ${DATA}/deploy no encontrado"
+  fi
+
+  # 7. Config de sistema del BOOT (crítico para DR)
   SYS="${BK}/system"
   mkdir -p "${SYS}/ssh" "${SYS}/systemd-user"
 
