@@ -10,7 +10,8 @@ bantime.increment = true
 bantime.factor = 6
 bantime.maxtime = 31536000
 # 172.18.0.0/16 = bridge de Docker: el host aparece como ese IP ante traefik — NUNCA banearlo
-ignoreip = 127.0.0.1/8 172.18.0.0/16
+# IPs propias (casa/trabajo) — mismas que ALLOWED_IPS del .env: nunca banearlas
+ignoreip = 127.0.0.1/8 172.18.0.0/16 <IP-propia-1> <IP-propia-2>
 
 [sshd]
 enabled = true
@@ -23,7 +24,7 @@ logpath = /var/log/traefik/access.log
 backend = polling
 maxretry = 5
 findtime = 300
-ignoreip = 127.0.0.1/8 ::1 172.18.0.0/16
+ignoreip = 127.0.0.1/8 ::1 172.18.0.0/16 <IP-propia-1> <IP-propia-2>
 
 [recidive]
 enabled = true
