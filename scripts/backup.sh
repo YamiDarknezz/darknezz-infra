@@ -51,10 +51,12 @@ run_backup() {
 
   # 6. Deploys de PROYECTOS: compose + conf.d + .env de cada app.
   # No viven en git (son artefactos del VPS), así que sin esto no se pueden rearmar.
-  # Los *-dist se excluyen: son regenerables desde el repo con el CI.
+  # Se excluye el subdirectorio dist/ de cada app: es el build, regenerable por CI.
+  # Se excluye por POSICIÓN (dist/ dentro de la carpeta del proyecto), no por
+  # sufijo del nombre: así la regla no depende de cómo se llame cada carpeta.
   if [ -d "${DATA}/deploy" ]; then
-    rsync -a --delete --exclude='*-dist/' "${DATA}/deploy/" "${BK}/deploy/"
-    echo "  ✓ deploys de proyectos (compose + conf.d + .env, sin *-dist)"
+    rsync -a --delete --exclude='*/dist/' "${DATA}/deploy/" "${BK}/deploy/"
+    echo "  ✓ deploys de proyectos (compose + conf.d + .env, sin dist/)"
   else
     echo "  ⚠ ${DATA}/deploy no encontrado"
   fi
