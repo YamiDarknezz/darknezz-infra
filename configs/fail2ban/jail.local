@@ -1,5 +1,9 @@
 # fail2ban — jail.local (template replicable, instalado por scripts/setup-fail2ban.sh)
 # Source of truth: este archivo. La copia viva vive en /etc/fail2ban/jail.local.
+# ⚠️ LISTA BLANCA: este repo es PÚBLICO, aquí solo van loopback + bridge de Docker.
+#    Las IPs propias (casa/trabajo) y la IP pública del VPS se inyectan desde .env
+#    (ALLOWED_IPS + VPS_PUBLIC_IP) al instalar — ver setup-fail2ban.sh y
+#    docs/FAIL2BAN_TRAEFIK_GUIDE.md. NUNCA commitear IPs propias en este archivo.
 [DEFAULT]
 bantime = 15m
 findtime = 10m
@@ -10,11 +14,8 @@ bantime.increment = true
 bantime.factor = 6
 bantime.maxtime = 31536000
 # 172.18.0.0/16 = bridge de Docker: el host aparece como ese IP ante traefik — NUNCA banearlo
-# <IP-publica-VPS> = IP pública del propio VPS: su tráfico hacia sus propios dominios (Prometheus
-#                   scrapeando /metrics, verificaciones que esperan 404) vuelve con esta IP de origen
-#                   y se auto-baneaba — nunca banearla
-# <IP-propia-1> / <IP-propia-2> = IPs propias (casa/trabajo), espejo de ALLOWED_IPS en .env
-ignoreip = 127.0.0.1/8 172.18.0.0/16 <IP-publica-VPS> <IP-propia-1> <IP-propia-2>
+# + IPs propias inyectadas por setup-fail2ban.sh desde .env (no versionado)
+ignoreip = 127.0.0.1/8 172.18.0.0/16
 
 [sshd]
 enabled = true
@@ -27,7 +28,8 @@ logpath = /var/log/traefik/access.log
 backend = polling
 maxretry = 5
 findtime = 300
-ignoreip = 127.0.0.1/8 ::1 172.18.0.0/16 <IP-publica-VPS> <IP-propia-1> <IP-propia-2>
+# ⚠️ Este ignoreip REEMPLAZA el de [DEFAULT] (no se fusiona): el script inyecta aquí también
+ignoreip = 127.0.0.1/8 ::1 172.18.0.0/16
 
 [recidive]
 enabled = true
