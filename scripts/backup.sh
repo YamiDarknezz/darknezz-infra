@@ -21,7 +21,17 @@ run_backup() {
   echo "=== backup ${STAMP} ==="
 
   # 1. Certificados Let's Encrypt (traefik los necesita en DR; re-emitibles pero mejor tenerlos)
-  cp -p "${INFRA}/traefik/acme.json" "${BK}/acme.json" 2>/dev/null && echo "  ✓ acme.json (certificados)" || echo "  ⚠ acme.json no encontrado"
+  # El store lo escribe Traefik como root: si no es legible por yami, sudo -n lo rescata.
+  # Regla: este paso NO puede degradar en silencio — un backup sin certs no es un backup OK.
+  if [ -r "${INFRA}/traefik/acme.json" ]; then
+    cp -p "${INFRA}/traefik/acme.json" "${BK}/acme.json"
+  else
+    sudo -n cp -p "${INFRA}/traefik/acme.json" "${BK}/acme.json"
+    sudo -n chown "$(id -u):$(id -g)" "${BK}/acme.json"
+  fi
+  [ -s "${BK}/acme.json" ] || { echo "  ✗ acme.json vacío o ilegible — backup abortado"; exit 1; }
+  chmod 600 "${BK}/acme.json"
+  echo "  ✓ acme.json (certificados, $(du -h "${BK}/acme.json" | cut -f1))"
 
   # 2. Secrets del compose (.env completo: Cloudflare, JWT, Grafana, DOMAIN)
   cp -p "${INFRA}/.env" "${BK}/env.compose.backup" 2>/dev/null && echo "  ✓ .env → env.compose.backup" || echo "  ⚠ .env no encontrado"
