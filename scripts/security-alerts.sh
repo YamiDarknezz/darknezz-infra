@@ -2,7 +2,14 @@
 # security-alerts.sh — alertas de seguridad a Telegram
 # 1) IPs baneadas por fail2ban (eventos nuevos, por offset de bytes)
 # 2) Logins SSH con clave NO autorizada (fingerprint fuera de allowlist)
-# Cron: cada 5 minutos. Silencioso si no hay nada nuevo (patrón watchdog).
+# ESTADO: DESHABILITADO desde 2026-09-14 — la linea de cron esta comentada a pedido de Gerardo.
+# Motivo: los baneos ya se resumen en los 3 briefings diarios (07:30 / 13:00 / 18:30) y este
+# watchdog avisaba baneo por baneo: 163 eventos de 128 IPs distintas en 7 dias (~18 mensajes/dia),
+# porque la jail http-traefik banea CUALQUIER 4xx, incluido el 404 de los bots que escanean.
+# La rama 2 (login SSH con clave NO autorizada) es la unica alerta que justifica tiempo real:
+# si algun dia la quieres, descomenta SOLO eso en el cron (o deja la linea completa y acepta el ruido).
+#
+# Cuando estaba activo: corria cada 5 minutos. Silencioso si no hay nada nuevo (patron watchdog).
 #
 # REGLA DE ESTE SCRIPT: su silencio debe significar "no hay nada que reportar",
 # NUNCA "me faltó config y no avisé". Si falta .env, falta una variable, el estado no
