@@ -96,6 +96,44 @@ cd /home/yami/data/deploy/angular-canvas && docker compose up -d
 ```
 El subdirectorio `dist/` de cada app NO se respalda: lo regenera el CI del repo con un push (o `gh workflow run ci.yml` en ese repo). Los GitHub Secrets no los devuelve GitHub: re-crear `DEPLOY_KEY` desde `backups/system/ssh/deploy/ci_deploy` y los otros dos desde el vault.
 
+### 6c. Impresos Trujillo (la base del negocio)
+
+El sistema de la imprenta (FastAPI + Angular + PostgreSQL) es el único proyecto
+con datos de un cliente. Su base vive en el contenedor `impresos-db` y sus
+capturas de pago en el volumen `data/volumes/impresos/comprobantes`.
+
+**Qué lo respalda, por dos vías complementarias:**
+
+```bash
+# 1. El respaldo del servidor (este repositorio), semanal:
+#    dump de la base -> data/backups/impresos-AAAA-MM-DD.dump  (rotación 30 días)
+~/data/repos/darknezz-infra/scripts/backup.sh
+
+# 2. El respaldo del propio proyecto, pensado para diario:
+#    paquete del día con la base + las capturas + la configuración
+cd ~/data/repos/impresos-trujillo && ./backups/backup.sh
+#    -> ~/data/backups/impresos/impresos-AAAA-MM-DD.tar.gz
+```
+
+**Restaurar**: el procedimiento completo está en
+`backups/README.md` del repositorio del proyecto. En corto:
+
+```bash
+cd ~/data/repos/impresos-trujillo
+./backups/restore.sh <paquete>.tar.gz --solo-verificar   # mirar sin tocar
+./backups/restore.sh <paquete>.tar.gz                    # restaurar (pide SI)
+cd ~/data/deploy/impresos && docker compose restart api web
+```
+
+Para el dump suelto de la vía 1, el restore se hace con `pg_restore` sobre un
+contenedor desechable; las capturas no van dentro de ese dump (van en el
+paquete del proyecto).
+
+⚠️ **Lo que falta**: ninguna de las dos copias sale del servidor. Hoy sirven para
+un borrado accidental o una migración fallida, pero no para perder el disco o la
+VM. Pendiente enviar el paquete del proyecto a un almacén externo (Cloudflare R2
+o Backblaze B2) y cifrarlo antes de que salga.
+
 ### 7. Verificación post-DR
 - `docker ps` → 7 contenedores healthy (traefik, portfolio, postgres, prometheus, grafana, alertmanager, node-exporter)
 - `docker exec traefik wget -qO- http://localhost:8080/ping` → OK

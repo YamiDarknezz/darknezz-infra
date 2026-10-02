@@ -118,6 +118,35 @@ run_backup() {
     note_fail "PostgreSQL no responde a pg_isready — dump imposible"
   fi
 
+  # 4b. PostgreSQL de las APLICACIONES: la base del negocio (impresos) vive en su
+  # propio contenedor y hasta ahora no la respaldaba nadie (issue #62 del proyecto).
+  # El .env del deploy es la fuente de verdad y se leen SOLO sus variables de base:
+  # nada de traer JWT_SECRET ni el dominio a este script.
+  IMP_ENV="${DATA}/deploy/impresos/.env"
+  if [ -r "${IMP_ENV}" ]; then
+    IMP_CONT="impresos-db"
+    IMP_DB="$(grep -E '^POSTGRES_DB=' "${IMP_ENV}" | head -1 | cut -d= -f2- || true)"
+    IMP_USER="$(grep -E '^POSTGRES_USER=' "${IMP_ENV}" | head -1 | cut -d= -f2- || true)"
+    if [ -z "${IMP_DB}" ] || [ -z "${IMP_USER}" ]; then
+      note_fail "impresos: POSTGRES_DB/USER no se pudieron leer de ${IMP_ENV} — la base del negocio NO se respaldó"
+    elif docker exec "${IMP_CONT}" pg_isready -U "${IMP_USER}" -d "${IMP_DB}" >/dev/null 2>&1; then
+      IMP_FILE="${BK}/impresos-$(date +%F).dump"
+      dump_err="$(docker exec "${IMP_CONT}" pg_dump -U "${IMP_USER}" -d "${IMP_DB}" -Fc > "${IMP_FILE}" 2>&1)" || true
+      if [ -s "${IMP_FILE}" ]; then
+        chmod 600 "${IMP_FILE}"
+        echo "  ✓ PostgreSQL impresos (impresos-$(date +%F).dump, $(du -sh "${IMP_FILE}" | cut -f1))"
+      else
+        note_fail "impresos: dump vacío — la base del negocio (órdenes, pagos, caja) NO quedó respaldada (${dump_err:-pg_dump sin salida})"
+      fi
+      # Rotación: el dump del día se pisa solo (mismo nombre) y se conservan 30 días.
+      find "${BK}" -maxdepth 1 -name 'impresos-*.dump' -mtime +30 -delete 2>/dev/null || true
+    else
+      note_fail "${IMP_CONT} no responde a pg_isready — dump de la base del negocio imposible"
+    fi
+  else
+    note_fail "${IMP_ENV} ilegible — sin esto la base del negocio (impresos) queda sin respaldo"
+  fi
+
   # 5. Hermes: config + memorias + skills + state.db (sin binarios reinstalables)
   rsync_req "Hermes (config + memorias + skills + state)" -a --delete \
     --exclude='hermes-agent' --exclude='venvs' --exclude='node' --exclude='bin' \
