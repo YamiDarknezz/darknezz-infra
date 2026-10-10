@@ -6,7 +6,7 @@
 
 ```
 darknezz-infra/
-├── docker-compose.yml           # Traefik + Prometheus + Grafana + AlertManager
+├── docker-compose.yml           # Traefik + Prometheus + Grafana + AlertManager + Dozzle
 ├── .env.example                 # Secrets template (copy to .env, never commit)
 ├── traefik/
 │   ├── traefik.yml              # Main config (entrypoints, metrics, certs)
@@ -42,6 +42,7 @@ darknezz-infra/
 | `traefik.darknezz.dev` | Traefik dashboard (BasicAuth-protected) |
 | `grafana.darknezz.dev` | Grafana dashboards (login propio) |
 | `prometheus.darknezz.dev` | Prometheus UI (BasicAuth del dashboard) |
+| `dozzle.darknezz.dev` | Dozzle container logs (login propio) |
 
 ## Quick start (on the VM)
 
@@ -70,6 +71,9 @@ Copy `.env.example` → `.env` with real values:
 | `POSTGRES_HOST` / `POSTGRES_PORT` | PostgreSQL host and port |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | PostgreSQL credentials |
 | `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` | Grafana admin (first login) |
+| `DOZZLE_AUTH_PROVIDER` | `simple` enables Dozzle's own login |
+| `DOZZLE_AUTH_TTL` | Session lifetime (`session` or a duration) |
+| `DOZZLE_HOSTNAME` | Label shown in the Dozzle header |
 
 The `.env` lives ONLY on the VM at `$HOME/data/docker/.env` (backed up to `data/backups/env.compose.backup` by `backup.sh`). This repo only has `.env.example` with placeholders.
 
@@ -97,6 +101,54 @@ PGPASSWORD=$POSTGRES_PASSWORD psql -h postgresql.darknezz.dev -p 5432 -U $POSTGR
 ### Backup
 
 PostgreSQL data is stored in `/home/yami/data/volumes/postgres/data` and backed up via `backup.sh`.
+
+## Dozzle (container logs)
+
+Real-time container logs in the browser at `dozzle.darknezz.dev`, replacing
+`docker logs -f` over SSH.
+
+Dozzle authenticates itself, so it does **not** sit behind the dashboard's
+BasicAuth. Accounts are managed inside Dozzle and stored in the data volume —
+nothing credential-related lives in this repo.
+
+### Creating an account
+
+Users live in `/data/users.yml`, which Dozzle owns. Two ways to create one:
+
+**From the UI** — open Dozzle and use *Settings → Security* to add a user with a
+password. This is the simplest path.
+
+**From the CLI** — the `generate` subcommand writes the entry with a bcrypt hash,
+so hashes are never typed by hand:
+
+```bash
+docker run --rm amir20/dozzle generate <username> --password <password> \
+  > $HOME/data/volumes/dozzle/users.yml
+```
+
+Optional per-user fields: `filter` limits which containers that user sees
+(for example `"label=com.docker.compose.project=<app>"`), and `roles` limits
+what they can do (`none`, `download`, `all`).
+
+### Access control
+
+Container actions and shell access are **off** — there is no
+`DOZZLE_ENABLE_ACTIONS` and no `DOZZLE_ENABLE_SHELL` in the compose file, so the
+UI cannot stop, start or exec into anything.
+
+> Mounting `docker.sock` as read-only does **not** restrict the Docker API. The
+> flag only marks the socket file as unwritable on disk; create/delete/update
+> calls still go through. The real protections here are Dozzle's own login and
+> keeping actions disabled. If actions were ever needed, the way to restrict the
+> socket properly is a socket proxy such as `tecnativa/docker-socket-proxy`.
+
+### Setup wizard
+
+A fresh install whose `/data` is empty shows a setup wizard. Its login step is
+only editable during the first 15 minutes when no auth provider is set — which
+is why `DOZZLE_AUTH_PROVIDER` is set in `.env`: with login on from the start,
+that window never applies and accounts are managed from *Settings → Security*
+instead.
 
 ## Request flow
 
