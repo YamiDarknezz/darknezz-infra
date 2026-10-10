@@ -177,6 +177,56 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Visor de logs de los contenedores por web.
+  #
+  # Dozzle trae su propio login, así que no necesita el basicAuth de Traefik:
+  # los usuarios se crean desde la propia interfaz (Configuración → Seguridad)
+  # y viven en un archivo dentro del volumen, no en el compose. Eso permite
+  # dar acceso a alguien sin darle también el dashboard ni las métricas.
+  #
+  # El socket de Docker va montado en modo lectura. Aclaración importante: eso
+  # NO limita la API de Docker, solo impide reescribir el archivo del socket.
+  # Por eso las acciones de Dozzle quedan apagadas por defecto (no están
+  # DOZZLE_ENABLE_ACTIONS ni DOZZLE_ENABLE_SHELL): desde la interfaz no se para
+  # ni se ejecuta nada en ningún contenedor. Si algún día hacen falta, se
+  # activan con esas variables y agregando el rol correspondiente al usuario.
+  dozzle:
+    image: amir20/dozzle:v11.3.0
+    container_name: dozzle
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Ajustes y usuarios de Dozzle. Al estar en un volumen, sobreviven a
+      # recrear el contenedor y a un update de la imagen.
+      - $HOME/data/volumes/dozzle:/data
+    environment:
+      # Login propio de Dozzle. Sin esto la interfaz queda abierta a quien
+      # llegue a la URL.
+      DOZZLE_AUTH_PROVIDER: ${DOZZLE_AUTH_PROVIDER}
+      # `session` cierra la sesión al cerrar el navegador. Se puede cambiar a
+      # una duración, por ejemplo `48h`, en el archivo .env de esta carpeta.
+      DOZZLE_AUTH_TTL: ${DOZZLE_AUTH_TTL}
+      DOZZLE_NO_ANALYTICS: "true"
+      DOZZLE_HOSTNAME: ${DOZZLE_HOSTNAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dozzle.rule=Host(`dozzle.${DOMAIN}`)"
+      - "traefik.http.routers.dozzle.entrypoints=websecure"
+      - "traefik.http.routers.dozzle.tls.certresolver=letsencrypt"
+      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+      # Rate limit primero en la cadena: un intento de fuerza bruta contra el
+      # login quema tokens antes de llegar a Dozzle.
+      - "traefik.http.routers.dozzle.middlewares=ratelimit-http"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 networks:
   proxy:
     external: true
