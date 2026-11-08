@@ -11,6 +11,3 @@ http:
       rateLimit:
         average: 10
         burst: 30
-    prometheus-auth:
-      basicAuth:
-        usersFile: /dynamic/.htpasswd

@@ -10,7 +10,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "5432:5432"
     environment:
       - CF_DNS_API_TOKEN=${CLOUDFLARE_TOKEN}
     volumes:
@@ -25,16 +24,7 @@ services:
       - "traefik.http.routers.dashboard.rule=Host(`traefik.${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
-      - "traefik.http.routers.dashboard.middlewares=ratelimit-http,dashboard-auth"
-      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${DASHBOARD_HASH}"
-      - "traefik.http.middlewares.ratelimit-http.ratelimit.average=30"
-      - "traefik.http.middlewares.ratelimit-http.ratelimit.burst=60"
-      - "traefik.http.middlewares.ratelimit-api.ratelimit.average=10"
-      - "traefik.http.middlewares.ratelimit-api.ratelimit.burst=30"
-      - "traefik.http.routers.metrics.rule=Host(`traefik.${DOMAIN}`) && PathPrefix(`/metrics`)"
-      - "traefik.http.routers.metrics.service=prometheus@internal"
-      - "traefik.http.routers.metrics.entrypoints=websecure"
-      - "traefik.http.routers.metrics.middlewares=dashboard-auth"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth@file"
     healthcheck:
       test: ["CMD", "traefik", "healthcheck"]
       interval: 30s
@@ -172,7 +162,7 @@ services:
       - "traefik.http.routers.filebrowser.entrypoints=websecure"
       - "traefik.http.routers.filebrowser.tls.certresolver=letsencrypt"
       - "traefik.http.services.filebrowser.loadbalancer.server.port=80"
-      - "traefik.http.routers.filebrowser.middlewares=ratelimit-http"
+      - "traefik.http.routers.filebrowser.middlewares=ratelimit-http@file"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
       interval: 30s
@@ -228,7 +218,7 @@ services:
       - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
       # Rate limit primero en la cadena: un intento de fuerza bruta contra el
       # login quema tokens antes de llegar a Dozzle.
-      - "traefik.http.routers.dozzle.middlewares=ratelimit-http"
+      - "traefik.http.routers.dozzle.middlewares=ratelimit-http@file"
     logging:
       driver: json-file
       options:
