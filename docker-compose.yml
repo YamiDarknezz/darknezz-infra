@@ -48,6 +48,8 @@ services:
         max-file: "3"
 
   prometheus:
+    profiles:
+      - monitoring
     image: prom/prometheus:v3.13.2
     container_name: prometheus
     restart: unless-stopped
@@ -78,6 +80,8 @@ services:
         max-file: "3"
 
   node-exporter:
+    profiles:
+      - monitoring
     image: prom/node-exporter:v1.9.1
     container_name: node-exporter
     restart: unless-stopped
@@ -96,6 +100,8 @@ services:
       - "traefik.enable=false"
 
   grafana:
+    profiles:
+      - monitoring
     image: grafana/grafana:13.2.0
     container_name: grafana
     restart: unless-stopped
@@ -129,6 +135,8 @@ services:
         max-file: "3"
 
   alertmanager:
+    profiles:
+      - monitoring
     image: prom/alertmanager:v0.33.1
     container_name: alertmanager
     restart: unless-stopped

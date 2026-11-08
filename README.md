@@ -28,20 +28,20 @@ darknezz-infra/
 └── docs/                        # Documentación técnica (VPS_SETUP.md, POSTGRES_TCP_ROUTING.md, etc.)
 ```
 
-> **Apps personales** (portfolio, inventory-api) están en sus propios repos.
-> Deploy de portfolio: `DarknezzDev/deploy/deploy.sh`
-> Deploy de inventory-api: `inventory-api/deploy/docker-compose.yml`
+> **Proyectos y Servicios Desplegados (CI/CD)**:
+> Proyectos como Impresos Trujillo, ERP Base y Portfolio se gestionan en sus propios repositorios y se despliegan automáticamente al VPS.
+> Toda la arquitectura, separación de carpetas (`repos/`, `deploy/`, `volumes/`), redes de Traefik y flujos de GitHub Actions están detallados en [**`docs/CI_CD_DEPLOYMENTS.md`**](docs/CI_CD_DEPLOYMENTS.md).
 
 ## Subdomain convention
 
 | Subdomain | Purpose |
 |---|---|
 | `darknezz.dev` | Portfolio (DarknezzDev) |
-| `api-inventory.darknezz.dev` | inventory-api (Spring Boot, PostgreSQL local) |
+| `api-inventory.darknezz.dev` | inventory-api (dado de baja / solo demo local) |
 | `postgresql.darknezz.dev` | PostgreSQL 18 (SSL, port 5432) |
 | `traefik.darknezz.dev` | Traefik dashboard (BasicAuth-protected) |
-| `grafana.darknezz.dev` | Grafana dashboards (login propio) |
-| `prometheus.darknezz.dev` | Prometheus UI (BasicAuth del dashboard) |
+| `grafana.darknezz.dev` | Grafana dashboards (en pausa por recursos - ver [MONITORING_STACK.md](docs/MONITORING_STACK.md)) |
+| `prometheus.darknezz.dev` | Prometheus UI (en pausa por recursos - ver [MONITORING_STACK.md](docs/MONITORING_STACK.md)) |
 | `dozzle.darknezz.dev` | Dozzle container logs (login propio) |
 
 ## Quick start (on the VM)
