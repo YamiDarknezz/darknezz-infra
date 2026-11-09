@@ -106,16 +106,20 @@ run_backup() {
   # 3. Password del scrape de Prometheus (password_file)
   copy_req "secrets de scraping Prometheus" "${BK}/traefik-metrics.password" "${DATA}/secrets/traefik-metrics.password"
 
-  # 4. PostgreSQL dump (backup de la base de datos)
-  if docker exec postgres pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1; then
-    dump_err="$(docker exec postgres pg_dump -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Fc > "${BK}/postgres-darknezz.dump" 2>&1)" || true
-    if [ -s "${BK}/postgres-darknezz.dump" ]; then
-      echo "  ✓ PostgreSQL dump (postgres-darknezz.dump, $(du -sh "${BK}/postgres-darknezz.dump" | cut -f1))"
+  # 4. PostgreSQL dump (backup de la base de datos demo/standalone si está activo)
+  if docker ps --format '{{.Names}}' | grep -qw postgres; then
+    if docker exec postgres pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1; then
+      dump_err="$(docker exec postgres pg_dump -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Fc > "${BK}/postgres-darknezz.dump" 2>&1)" || true
+      if [ -s "${BK}/postgres-darknezz.dump" ]; then
+        echo "  ✓ PostgreSQL dump (postgres-darknezz.dump, $(du -sh "${BK}/postgres-darknezz.dump" | cut -f1))"
+      else
+        note_fail "PostgreSQL dump vacío — la base NO quedó respaldada (${dump_err:-pg_dump sin salida})"
+      fi
     else
-      note_fail "PostgreSQL dump vacío — la base NO quedó respaldada (${dump_err:-pg_dump sin salida})"
+      note_fail "PostgreSQL no responde a pg_isready — dump imposible"
     fi
   else
-    note_fail "PostgreSQL no responde a pg_isready — dump imposible"
+    echo "  - PostgreSQL standalone (postgres:18) pausado — saltando dump demo"
   fi
 
   # 4b. PostgreSQL de las APLICACIONES: la base del negocio (impresos) vive en su
